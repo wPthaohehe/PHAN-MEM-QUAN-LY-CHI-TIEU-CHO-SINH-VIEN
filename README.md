@@ -1,1 +1,1 @@
-# Ph-n-m-m-qu-n-l-chi-ti-u-cho-sinh-vi-n
+# Phan mem quan ly chi tieu cho sinh vien
