@@ -18,17 +18,19 @@
 *   Thống kê, biểu đồ
 
 ### Cách thức hoạt động:
+* **Đăng ký tài khoản**: người dùng nhập tên đăng nhập, mật khẩu, họ tên, email → hệ thống kiểm tra tên đăng nhập/email chưa từng tồn tại → nếu hợp lệ thì lưu tài khoản mới vào database, nếu trùng thì báo lỗi và yêu cầu nhập lại.
+* **Đăng nhập**: người dùng nhập tên đăng nhập và mật khẩu → hệ thống đối chiếu với dữ liệu đã lưu → nếu khớp thì cho vào trang chính, nếu sai thì hiển thị thông báo "Sai tài khoản hoặc mật khẩu".
 *   **Thêm giao dịch**: người dùng chọn loại (thu/chi) → chọn danh mục (VD: ăn uống, học tập,...) → nhập số tiền, ngày, ghi chú → hệ thống lưu vào database và cập nhật lại tổng chi tiêu.
 *   **Thống kê chi tiêu**: hệ thống lấy toàn bộ giao dịch trong khoảng thời gian được chọn (ngày/tuần/tháng) → gộp nhóm theo danh mục → tính tổng từng nhóm → hiển thị dưới dạng biểu đồ (tròn, cột) để người dùng dễ so sánh
 ### Yêu cầu phi chức năng:
-*   Dữ liệu được lưu lại sau khi tắt ứng dụng: Toàn bộ giao dịch, ngân sách phải được lưu vào database (SQLite/MySQL) hoặc local storage, 
-*   Giao diện dễ sử dụng: Đơn giản, trực quan, phù hợp thao tác nhanh trên điện thoại/máy tính
+*   Dữ liệu được lưu lại sau khi tắt ứng dụng: Toàn bộ giao dịch, ngân sách phải được lưu vào database (MySQL) hoặc local storage.
+*   Giao diện dễ sử dụng: Đơn giản, trực quan, phù hợp thao tác nhanh trên điện thoại/máy tính.
 *   Hệ thống hoạt động ổn định, hạn chế lỗi.
 *   Đảm bảo tính chính xác của dữ liệu.
 
 ## 4. Công nghệ dự kiến sử dụng
 *   Ngôn ngữ lập trình: C++
-*   Hệ quản trị CSDL / Lưu trữ: 
+*   Hệ quản trị CSDL / Lưu trữ: MySQL
 *   Công cụ quản lý: Git, GitHub
 
 ## 5. Thiết kế Database
