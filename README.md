@@ -18,8 +18,8 @@
 *   Thống kê, biểu đồ
 
 ### Cách thức hoạt động:
-*   Thêm giao dịch: người dùng chọn loại (thu/chi) → chọn danh mục (VD: ăn uống, học tập,...) → nhập số tiền, ngày, ghi chú → hệ thống lưu vào database và cập nhật lại tổng chi tiêu.
-*   Thống kê chi tiêu: hệ thống lấy toàn bộ giao dịch trong khoảng thời gian được chọn (ngày/tuần/tháng) → gộp nhóm theo danh mục → tính tổng từng nhóm → hiển thị dưới dạng biểu đồ (tròn, cột) để người dùng dễ so sánh
+*   **Thêm giao dịch**: người dùng chọn loại (thu/chi) → chọn danh mục (VD: ăn uống, học tập,...) → nhập số tiền, ngày, ghi chú → hệ thống lưu vào database và cập nhật lại tổng chi tiêu.
+*   **Thống kê chi tiêu**: hệ thống lấy toàn bộ giao dịch trong khoảng thời gian được chọn (ngày/tuần/tháng) → gộp nhóm theo danh mục → tính tổng từng nhóm → hiển thị dưới dạng biểu đồ (tròn, cột) để người dùng dễ so sánh
 ### Yêu cầu phi chức năng:
 *   Dữ liệu được lưu lại sau khi tắt ứng dụng: Toàn bộ giao dịch, ngân sách phải được lưu vào database (SQLite/MySQL) hoặc local storage, 
 *   Giao diện dễ sử dụng: Đơn giản, trực quan, phù hợp thao tác nhanh trên điện thoại/máy tính
