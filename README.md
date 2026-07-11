@@ -21,53 +21,17 @@
 * **Đăng ký tài khoản**: người dùng nhập tên đăng nhập, mật khẩu, họ tên, email → hệ thống kiểm tra tên đăng nhập/email chưa từng tồn tại → nếu hợp lệ thì lưu tài khoản mới vào database, nếu trùng thì báo lỗi và yêu cầu nhập lại.
 * **Đăng nhập**: người dùng nhập tên đăng nhập và mật khẩu → hệ thống đối chiếu với dữ liệu đã lưu → nếu khớp thì cho vào trang chính, nếu sai thì hiển thị thông báo "Sai tài khoản hoặc mật khẩu".
 *   **Thêm giao dịch**: người dùng chọn loại (thu/chi) → chọn danh mục (VD: ăn uống, học tập,...) → nhập số tiền, ngày, ghi chú → hệ thống lưu vào database và cập nhật lại tổng chi tiêu.
+*   **Sửa giao dịch**: người dùng chọn 1 giao dịch trong danh sách → chỉnh sửa thông tin (số tiền, danh mục, ngày, ghi chú) → hệ thống cập nhật lại dữ liệu trong database.
+*   **Xóa giao dịch**: người dùng chọn 1 giao dịch → xác nhận xóa → hệ thống xóa bản ghi khỏi database và cập nhật lại tổng chi tiêu.
 *   **Thống kê chi tiêu**: hệ thống lấy toàn bộ giao dịch trong khoảng thời gian được chọn (ngày/tuần/tháng) → gộp nhóm theo danh mục → tính tổng từng nhóm → hiển thị dưới dạng biểu đồ (tròn, cột) để người dùng dễ so sánh
 ### Yêu cầu phi chức năng:
-*   Dữ liệu được lưu lại sau khi tắt ứng dụng: Toàn bộ giao dịch, ngân sách phải được lưu vào database (MySQL) hoặc local storage.
-*   Giao diện dễ sử dụng: Đơn giản, trực quan, phù hợp thao tác nhanh trên điện thoại/máy tính.
-*   Hệ thống hoạt động ổn định, hạn chế lỗi.
-*   Đảm bảo tính chính xác của dữ liệu.
+*   **Lưu trữ dữ liệu**: Toàn bộ giao dịch phải được lưu vào database MySQL, đảm bảo dữ liệu vẫn còn khi tắt/mở lại ứng dụng. Sử dụng XAMPP để chạy MySQL Server cục bộ trong quá trình phát triển.
+*   **Giao diện dễ sử dụng**: Xây dựng bằng Qt (C++), bố cục đơn giản, rõ ràng; thao tác thêm 1 giao dịch không quá 3 bước; các nút chức năng chính hiển thị ngay trên màn hình chính.
+*   **Hệ thống hoạt động ổn định, hạn chế lỗi**: Kiểm tra tính hợp lệ của dữ liệu đầu vào (số tiền phải lớn hơn 0, ngày nhập phải hợp lệ, danh mục bắt buộc phải chọn); sử dụng try-catch cho mọi thao tác kết nối và truy vấn cơ sở dữ liệu (đặc biệt xử lý trường hợp mất kết nối đến MySQL Server); ứng dụng không bị treo/sập khi người dùng nhập sai định dạng.
+*   **Đảm bảo tính chính xác của dữ liệu**: Sử dụng khóa ngoại (Foreign Key) để ràng buộc dữ liệu giữa các bảng; kiểm tra trùng lặp khi thêm giao dịch; tổng chi tiêu hiển thị phải khớp chính xác với dữ liệu đã lưu trong database.
 
 ## 4. Công nghệ dự kiến sử dụng
 *   Ngôn ngữ lập trình: C++
+*   Framework giao diện: Qt
 *   Hệ quản trị CSDL / Lưu trữ: MySQL
 *   Công cụ quản lý: Git, GitHub
-
-## 5. Thiết kế Database
-
-### Xác định các thực thể:
-* NguoiDung (Người dùng)
-* DanhMuc (Danh mục thu/chi)
-* GiaoDich (Giao dịch thu/chi)
-
-### Thuộc tính & khóa chính từng thực thể:
-
-**NguoiDung**
-* MaND (khóa chính)
-* TenDangNhap
-* MatKhau
-* HoTen
-* Email
-* SDT
-
-**DanhMuc**
-* MaDanhMuc (khóa chính)
-* TenDanhMuc (VD: ăn uống, học tập, đi lại...)
-* LoaiDanhMuc (Thu/Chi)
-
-**GiaoDich**
-* MaGiaoDich (khóa chính)
-* MaND (khóa ngoại → NguoiDung)
-* MaDanhMuc (khóa ngoại → DanhMuc)
-* SoTien
-* NgayGiaoDich
-* GhiChu
-
-### Mối quan hệ giữa các thực thể:
-* NguoiDung – GiaoDich: quan hệ 1-nhiều (1 người dùng có nhiều giao dịch)
-* DanhMuc – GiaoDich: quan hệ 1-nhiều (1 danh mục có nhiều giao dịch)
-
-### Sơ đồ quan hệ (ERD):
-```
-NguoiDung (1) ──< (n) GiaoDich (n) >── (1) DanhMuc
-```
