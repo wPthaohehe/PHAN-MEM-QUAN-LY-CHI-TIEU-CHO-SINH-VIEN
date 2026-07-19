@@ -36,4 +36,4 @@
 *   Hệ quản trị CSDL / Lưu trữ: MySQL
 *   Công cụ quản lý: Git, GitHub
 ## 5. Tài liệu chi tiết
-*   [Thiết kế Database](https://docs.google.com/document/d/144--EAy12hre5TKunQcreAweu9ojwioDHMFd-0ScgXo/edit?tab=t.0)
+*   [Thiết kế Database](https://docs.google.com/document/d/1g6KCY7egKtHEWlcyVNjYLM6KV7qg6kOb/edit)
