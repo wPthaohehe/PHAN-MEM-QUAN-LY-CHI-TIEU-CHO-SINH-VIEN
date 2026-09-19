@@ -15,7 +15,7 @@
   } catch (e) { /* bỏ qua nếu trình duyệt chặn localStorage */ }
 
   const NAV_ITEMS = [
-    { key: 'dashboard', label: 'Tổng quan', icon: '🏠', url: '../dashboard/dashboard.html' },
+    { key: 'dashboard', label: 'Trang chủ', icon: '🏠', url: '../dashboard/dashboard.html' },
     { key: 'reports', label: 'Báo cáo', icon: '📊', url: '../reports/reports.html' },
     { key: 'transactions', label: 'Giao dịch', icon: '🧾', url: '../transactions/transactions.html' },
     { key: 'budgets', label: 'Ngân sách', icon: '🎯', url: '../budgets/budgets.html' },
