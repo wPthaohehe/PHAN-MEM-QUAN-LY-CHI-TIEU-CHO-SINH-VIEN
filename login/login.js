@@ -15,6 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function saveUsers(users) {
+    localStorage.setItem('poketto_users', JSON.stringify(users));
+  }
+
+  function newId() {
+    return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
   function validateIdentifier() {
     if (identifierInput.value.trim() === '') {
       identifierError.textContent = 'Vui lòng nhập email hoặc tên đăng nhập.';
@@ -63,10 +71,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    localStorage.setItem('poketto_current_user', JSON.stringify(matchedUser));
-    console.log('Đăng nhập thành công:', matchedUser);
+    // Tài khoản tạo từ bản cũ có thể chưa có id -> cấp id và lưu lại
+    if (!matchedUser.id) {
+      matchedUser.id = newId();
+      saveUsers(users);
+    }
+
+    // Phiên đăng nhập chỉ chứa id/fullName/email, KHÔNG chứa mật khẩu
+    const session = { id: matchedUser.id, fullName: matchedUser.fullName, email: matchedUser.email };
+    localStorage.setItem('poketto_current_user', JSON.stringify(session));
+    console.log('Đăng nhập thành công:', session);
 
     loginError.style.color = '#2f7d5b';
     loginError.textContent = 'Đăng nhập thành công! Chào mừng ' + matchedUser.fullName + '.';
+
+    setTimeout(function () {
+      window.location.href = '../dashboard/dashboard.html';
+    }, 600);
   });
 });
