@@ -1,35 +1,142 @@
 (function () {
   'use strict';
 
-  const user = UI.initShell({ active: 'profile', title: 'Hồ sơ', onDataChange: function () {} });
+  const user = UI.initShell({ active: 'profile', title: 'Cài đặt', onDataChange: function () {} });
   if (!user) return;
 
   const root = document.getElementById('content');
   const esc = UI.esc;
 
+  function isDark() {
+    try { return localStorage.getItem('poketto_theme') === 'dark'; } catch (e) { return false; }
+  }
+  function setDark(on) {
+    document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
+    try { localStorage.setItem('poketto_theme', on ? 'dark' : 'light'); } catch (e) { /* ignore */ }
+  }
+  function getPref(key, def) {
+    try { const v = localStorage.getItem(key); return v === null ? def : v === '1'; } catch (e) { return def; }
+  }
+  function setPref(key, on) {
+    try { localStorage.setItem(key, on ? '1' : '0'); } catch (e) { /* ignore */ }
+  }
+
+  function openInfoModal(p) {
+    const form = UI.el('form', 'form');
+    form.noValidate = true;
+    form.innerHTML =
+      '<label for="pName">Họ và tên</label><input type="text" id="pName" maxlength="50">' +
+      '<span class="field-error" id="pNameErr"></span>' +
+      '<label for="pEmail">Email <small class="muted">(dùng để đăng nhập, không đổi được)</small></label><input type="email" id="pEmail" readonly>' +
+      '<label for="pPhone">Số điện thoại</label><input type="tel" id="pPhone" maxlength="12">' +
+      '<span class="field-error" id="pPhoneErr"></span>' +
+      '<span class="field-error form-error" id="infoErr"></span>' +
+      '<div class="modal-actions"><button type="button" class="btn ghost" id="infoCancel">Hủy</button>' +
+      '<button type="submit" class="btn primary">Lưu thay đổi</button></div>';
+    const $ = function (s) { return form.querySelector(s); };
+    $('#pName').value = p.fullName;
+    $('#pEmail').value = p.email;
+    $('#pPhone').value = p.phone;
+
+    const modal = UI.openModal({ title: 'Chỉnh sửa hồ sơ', body: form, width: '440px' });
+    $('#infoCancel').addEventListener('click', function () { modal.close(); });
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      $('#infoErr').textContent = ''; $('#pNameErr').textContent = ''; $('#pPhoneErr').textContent = '';
+      try {
+        await Store.profile.update({ fullName: $('#pName').value, phone: $('#pPhone').value });
+        UI.toast('Đã lưu thông tin.', 'success');
+        modal.close();
+        setTimeout(function () { location.reload(); }, 400);
+      } catch (err) {
+        const m = UI.errMsg(err);
+        if (/họ và tên/i.test(m)) $('#pNameErr').textContent = m;
+        else if (/điện thoại/i.test(m)) $('#pPhoneErr').textContent = m;
+        else $('#infoErr').textContent = m;
+      }
+    });
+  }
+
+  function openPasswordModal() {
+    const form = UI.el('form', 'form');
+    form.noValidate = true;
+    form.innerHTML =
+      '<label for="pwOld">Mật khẩu hiện tại</label><input type="password" id="pwOld" autocomplete="current-password">' +
+      '<label for="pwNew">Mật khẩu mới</label><input type="password" id="pwNew" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự, gồm chữ và số">' +
+      '<label for="pwNew2">Nhập lại mật khẩu mới</label><input type="password" id="pwNew2" autocomplete="new-password">' +
+      '<span class="field-error form-error" id="pwErr"></span>' +
+      '<div class="modal-actions"><button type="button" class="btn ghost" id="pwCancel">Hủy</button>' +
+      '<button type="submit" class="btn primary">Đổi mật khẩu</button></div>';
+    const $ = function (s) { return form.querySelector(s); };
+    const modal = UI.openModal({ title: 'Đổi mật khẩu', body: form, width: '420px' });
+    $('#pwCancel').addEventListener('click', function () { modal.close(); });
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      $('#pwErr').textContent = '';
+      try {
+        await Store.profile.changePassword($('#pwOld').value, $('#pwNew').value, $('#pwNew2').value);
+        UI.toast('Đã đổi mật khẩu.', 'success');
+        modal.close();
+      } catch (err) { $('#pwErr').textContent = UI.errMsg(err); }
+    });
+  }
+
+  function csvCell(v) {
+    let s = String(v == null ? '' : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+
+  async function exportData() {
+    try {
+      const all = await Store.transactions.list();
+      if (!all.length) { UI.toast('Chưa có giao dịch nào để xuất.', 'info'); return; }
+      const rows = [['Ngày', 'Loại', 'Danh mục', 'Số tiền', 'Ghi chú']].concat(all.map(function (t) {
+        return [UI.formatDate(t.date), t.type === 'income' ? 'Thu' : 'Chi', t.categoryName, t.amount, t.note];
+      }));
+      const csv = '\uFEFF' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'poketto-chi-tieu.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      UI.toast('Đã xuất ' + all.length + ' giao dịch ra file CSV.', 'success');
+    } catch (err) { UI.toast(UI.errMsg(err), 'error'); }
+  }
+
   async function render() {
     try {
       const p = await Store.profile.get();
-      root.innerHTML =
-        '<div class="page-head"><div><h1>Hồ sơ cá nhân</h1><p class="muted">Quản lý thông tin tài khoản và dữ liệu của bạn.</p></div></div>' +
-        '<div class="grid two">' +
-          '<div class="card"><h3>Thông tin tài khoản</h3>' +
-            '<form class="form" id="infoForm" novalidate>' +
-              '<label for="pName">Họ và tên</label><input type="text" id="pName" maxlength="50"><span class="field-error" id="pNameErr"></span>' +
-              '<label for="pEmail">Email <small class="muted">(dùng để đăng nhập, không đổi được)</small></label><input type="email" id="pEmail" readonly>' +
-              '<label for="pPhone" style="margin-top:12px">Số điện thoại</label><input type="tel" id="pPhone" maxlength="12"><span class="field-error" id="pPhoneErr"></span>' +
-              '<span class="field-error form-error" id="infoErr"></span><div class="form-success" id="infoOk"></div>' +
-              '<button type="submit" class="btn primary">Lưu thông tin</button>' +
-            '</form></div>' +
+      const initial = String(p.fullName || '?').trim().charAt(0).toUpperCase() || '?';
 
-          '<div class="card"><h3>Đổi mật khẩu</h3>' +
-            '<form class="form" id="pwForm" novalidate>' +
-              '<label for="pwOld">Mật khẩu hiện tại</label><input type="password" id="pwOld" autocomplete="current-password">' +
-              '<label for="pwNew">Mật khẩu mới</label><input type="password" id="pwNew" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự, gồm chữ và số">' +
-              '<label for="pwNew2">Nhập lại mật khẩu mới</label><input type="password" id="pwNew2" autocomplete="new-password">' +
-              '<span class="field-error form-error" id="pwErr"></span><div class="form-success" id="pwOk"></div>' +
-              '<button type="submit" class="btn primary">Đổi mật khẩu</button>' +
-            '</form></div>' +
+      root.innerHTML =
+        '<div class="page-head"><div><h1>Cài đặt</h1></div></div>' +
+
+        '<div class="card" style="margin-bottom:16px">' +
+          '<div class="settings-avatar-row">' +
+            '<span class="avatar">' + esc(initial) + '</span>' +
+            '<div style="flex:1;min-width:0"><h3>' + esc(p.fullName) + '</h3><small>' + esc(p.email) + '</small></div>' +
+            '<button class="btn ghost" id="editProfileBtn">✏️ Chỉnh sửa hồ sơ</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="card" style="margin-bottom:16px"><h3>Tùy chọn ứng dụng</h3>' +
+          '<div class="settings-row"><span class="sr-left">🔔 Thông báo</span>' +
+            '<label class="switch"><input type="checkbox" id="notifToggle"><span class="slider"></span></label></div>' +
+          '<div class="settings-row"><span class="sr-left">🌙 Chế độ tối</span>' +
+            '<label class="switch"><input type="checkbox" id="darkToggle"><span class="slider"></span></label></div>' +
+          '<div class="settings-row"><span class="sr-left">💲 Đơn vị tiền tệ</span>' +
+            '<select id="currencySel"><option>VNĐ</option></select></div>' +
+          '<div class="settings-row"><span class="sr-left">🌐 Ngôn ngữ</span>' +
+            '<select id="langSel"><option>Tiếng Việt</option></select></div>' +
+        '</div>' +
+
+        '<div class="card" style="margin-bottom:16px"><h3>Bảo mật</h3>' +
+          '<button type="button" class="settings-row" id="changePwRow"><span class="sr-left">🔒 Đổi mật khẩu</span><span class="chevron">›</span></button>' +
+          '<button type="button" class="settings-row" id="exportRow"><span class="sr-left">⬇ Xuất dữ liệu chi tiêu</span><span class="chevron">›</span></button>' +
         '</div>' +
 
         '<div class="card" style="margin-bottom:16px"><h3>Dữ liệu</h3>' +
@@ -40,46 +147,24 @@
           '<p class="muted" style="margin-bottom:12px">Xóa toàn bộ giao dịch, ngân sách và mục tiêu tiết kiệm của bạn. Danh mục và tài khoản được giữ nguyên. Không thể hoàn tác.</p>' +
           '<div class="row-actions"><button class="btn danger" id="clearBtn">Xóa toàn bộ dữ liệu</button></div></div>';
 
-      root.querySelector('#pName').value = p.fullName;
-      root.querySelector('#pEmail').value = p.email;
-      root.querySelector('#pPhone').value = p.phone;
-      bind();
+      root.querySelector('#notifToggle').checked = getPref('poketto_notif', true);
+      root.querySelector('#darkToggle').checked = isDark();
+
+      bind(p);
     } catch (e) {
       root.innerHTML = '<div class="card"><div class="empty"><p>' + esc(UI.errMsg(e)) + '</p></div></div>';
     }
   }
 
-  function bind() {
+  function bind(p) {
     const $ = function (s) { return root.querySelector(s); };
 
-    $('#infoForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      $('#infoErr').textContent = ''; $('#infoOk').textContent = '';
-      $('#pNameErr').textContent = ''; $('#pPhoneErr').textContent = '';
-      try {
-        await Store.profile.update({ fullName: $('#pName').value, phone: $('#pPhone').value });
-        UI.toast('Đã lưu thông tin.', 'success');
-        // Tải lại để tên mới hiển thị trên sidebar
-        setTimeout(function () { location.reload(); }, 600);
-        $('#infoOk').textContent = 'Đã lưu thông tin.';
-      } catch (err) {
-        const m = UI.errMsg(err);
-        if (/họ và tên/i.test(m)) $('#pNameErr').textContent = m;
-        else if (/điện thoại/i.test(m)) $('#pPhoneErr').textContent = m;
-        else $('#infoErr').textContent = m;
-      }
-    });
+    $('#editProfileBtn').addEventListener('click', function () { openInfoModal(p); });
+    $('#changePwRow').addEventListener('click', openPasswordModal);
+    $('#exportRow').addEventListener('click', exportData);
 
-    $('#pwForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      $('#pwErr').textContent = ''; $('#pwOk').textContent = '';
-      try {
-        await Store.profile.changePassword($('#pwOld').value, $('#pwNew').value, $('#pwNew2').value);
-        $('#pwForm').reset();
-        $('#pwOk').textContent = 'Đổi mật khẩu thành công.';
-        UI.toast('Đã đổi mật khẩu.', 'success');
-      } catch (err) { $('#pwErr').textContent = UI.errMsg(err); }
-    });
+    $('#notifToggle').addEventListener('change', function (e) { setPref('poketto_notif', e.target.checked); });
+    $('#darkToggle').addEventListener('change', function (e) { setDark(e.target.checked); });
 
     $('#seedBtn').addEventListener('click', async function () {
       const ok = await UI.confirm('Thêm khoảng 3 tháng giao dịch mẫu vào tài khoản của bạn? Dữ liệu mẫu sẽ được cộng thêm vào dữ liệu hiện có.', { title: 'Nạp dữ liệu mẫu', okText: 'Nạp dữ liệu' });

@@ -7,13 +7,34 @@
 (function (global) {
   'use strict';
 
+  // Áp dụng chế độ tối ngay khi tệp này được nạp, tránh nháy sáng khi tải trang.
+  try {
+    if (localStorage.getItem('poketto_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (e) { /* bỏ qua nếu trình duyệt chặn localStorage */ }
+
   const NAV_ITEMS = [
     { key: 'dashboard', label: 'Tổng quan', icon: '🏠', url: '../dashboard/dashboard.html' },
+    { key: 'reports', label: 'Báo cáo', icon: '📊', url: '../reports/reports.html' },
     { key: 'transactions', label: 'Giao dịch', icon: '🧾', url: '../transactions/transactions.html' },
     { key: 'budgets', label: 'Ngân sách', icon: '🎯', url: '../budgets/budgets.html' },
     { key: 'categories', label: 'Danh mục', icon: '🏷️', url: '../categories/categories.html' },
-    { key: 'profile', label: 'Hồ sơ', icon: '👤', url: '../profile/profile.html' }
+    { key: 'profile', label: 'Cài đặt', icon: '⚙️', url: '../profile/profile.html' }
   ];
+
+  const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  function dateChip(dateStr) {
+    const p = String(dateStr || '').split('-');
+    if (p.length !== 3) return '';
+    return Number(p[2]) + ' th ' + Number(p[1]) + ', ' + p[0];
+  }
+  function formatDateLong(dateStr) {
+    const p = String(dateStr || '').split('-');
+    if (p.length !== 3) return '';
+    const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    return WEEKDAYS[d.getDay()] + ', ' + p[2] + '/' + p[1] + '/' + p[0];
+  }
 
   /* ---------- Tiện ích cơ bản ---------- */
   function esc(s) {
@@ -189,12 +210,16 @@
   }
 
   /* ---------- Khung trang (sidebar + topbar) ---------- */
-  function shellTemplate(user, active, title) {
+  function shellTemplate(user, active, title, greeting) {
     const initial = String(user.fullName || '?').trim().charAt(0).toUpperCase() || '?';
     const nav = NAV_ITEMS.map(function (item) {
       return '<a class="nav-link' + (item.key === active ? ' active' : '') + '" href="' + item.url + '">' +
         '<span class="nav-icon">' + item.icon + '</span><span>' + esc(item.label) + '</span></a>';
     }).join('');
+
+    const titleHtml = greeting
+      ? '<span class="topbar-title greeting">' + esc(greeting) + '</span>'
+      : '<span class="topbar-title">' + esc(title || '') + '</span>';
 
     return (
       '<div class="app-shell">' +
@@ -211,8 +236,14 @@
         '<div class="app-main">' +
           '<header class="topbar">' +
             '<button class="icon-btn menu-btn" id="menuBtn" aria-label="Mở menu">☰</button>' +
-            '<span class="topbar-title">' + esc(title || '') + '</span>' +
+            titleHtml +
             '<span class="spacer"></span>' +
+            '<span class="date-chip hide-sm">📅 ' + esc(dateChip(global.Store.util.today())) + '</span>' +
+            '<form class="search-box hide-sm" id="topSearchForm"><input type="search" id="topSearch" placeholder="Tìm kiếm"></form>' +
+            '<div style="position:relative">' +
+              '<button type="button" class="icon-btn bell-btn" id="bellBtn" aria-label="Thông báo">🔔</button>' +
+            '</div>' +
+            '<a class="topbar-user" href="../profile/profile.html"><span class="status-dot"></span><span class="hide-sm">' + esc(user.fullName || '') + '</span></a>' +
           '</header>' +
           '<main class="content" id="content"></main>' +
         '</div>' +
@@ -226,7 +257,7 @@
     if (!user) return null;
 
     document.title = (opts.title ? opts.title + ' · ' : '') + 'Poketto';
-    document.body.innerHTML = shellTemplate(user, opts.active, opts.title);
+    document.body.innerHTML = shellTemplate(user, opts.active, opts.title, opts.greeting);
 
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
@@ -240,6 +271,28 @@
 
     document.getElementById('logoutBtn').addEventListener('click', function () {
       global.Auth.logout();
+    });
+
+    document.getElementById('topSearchForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const q = document.getElementById('topSearch').value.trim();
+      location.href = '../transactions/transactions.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+    });
+
+    const bellBtn = document.getElementById('bellBtn');
+    bellBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const existing = document.querySelector('.bell-pop');
+      if (existing) { existing.remove(); return; }
+      const pop = el('div', 'bell-pop');
+      pop.textContent = 'Bạn chưa có thông báo mới.';
+      bellBtn.parentElement.appendChild(pop);
+      setTimeout(function () {
+        document.addEventListener('click', function onDoc() {
+          pop.remove();
+          document.removeEventListener('click', onDoc);
+        });
+      }, 0);
     });
 
     if (typeof opts.onDataChange === 'function') {
@@ -372,6 +425,7 @@
     formatMoney: formatMoney,
     formatShort: formatShort,
     formatDate: formatDate,
+    formatDateLong: formatDateLong,
     formatMonth: formatMonth,
     amountHtml: amountHtml,
     errMsg: errMsg,

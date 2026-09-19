@@ -197,8 +197,11 @@
   (async function init() {
     try {
       cats = await Store.categories.list();
-      applyPreset('month');
+      const params = new URLSearchParams(location.search);
+      const q = params.get('q');
+      if (q) { applyPreset('all'); state.q = q; } else { applyPreset('month'); }
       buildLayout();
+      if (q) root.querySelector('#fQ').value = q;
       refresh();
     } catch (e) {
       root.innerHTML = '<div class="card"><div class="empty"><p>' + esc(UI.errMsg(e)) + '</p></div></div>';
