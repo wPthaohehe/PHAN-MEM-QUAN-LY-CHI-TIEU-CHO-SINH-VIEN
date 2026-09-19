@@ -21,9 +21,6 @@
 
   const root = document.getElementById('content');
 
-  /* ĐÃ GỠ: budgetRow() / goalRow() – khung "Ngân sách tháng" và "Mục tiêu tiết kiệm"
-     không còn hiển thị ở Trang chủ. Xem trang Ngân sách (../budgets/budgets.html). */
-
   function groupByDate(list) {
     const order = [];
     const map = {};
@@ -154,8 +151,8 @@
         quickAddHtml(cats) +
       '</div>';
     /* ĐÃ GỠ khỏi Trang chủ: biểu đồ tròn "Chi tiêu theo danh mục",
-       biểu đồ cột "Thu & chi 6 tháng gần nhất", khung "Ngân sách tháng"
-       và khung "Mục tiêu tiết kiệm". Biểu đồ nay nằm ở trang Báo cáo. */
+       biểu đồ cột "Thu & chi 6 tháng gần nhất" và khung "Ngân sách tháng".
+       Biểu đồ nay nằm ở trang Báo cáo. */
 
     root.innerHTML = html;
 

@@ -10,7 +10,6 @@
      poketto_categories   {id, userId, name, type: 'income'|'expense', icon, color}
      poketto_transactions {id, userId, categoryId, amount, date 'YYYY-MM-DD', note, createdAt}
      poketto_budgets      {id, userId, categoryId, month 'YYYY-MM', limit}
-     poketto_goals        {id, userId, name, target, saved, deadline|null, createdAt}
    (loại thu/chi của giao dịch được suy ra từ danh mục, giống thiết kế SQL)
    ============================================================ */
 (function (global) {
@@ -20,7 +19,6 @@
     categories: 'poketto_categories',
     transactions: 'poketto_transactions',
     budgets: 'poketto_budgets',
-    goals: 'poketto_goals',
     users: 'poketto_users',
     seeded: 'poketto_categories_seeded'
   };
@@ -429,82 +427,6 @@
   };
 
   /* ============================================================
-     MỤC TIÊU TIẾT KIỆM
-     ============================================================ */
-  function validateGoal(data) {
-    const name = String(data.name || '').trim();
-    if (!name) fail('Vui lòng nhập tên mục tiêu.');
-    if (name.length > 100) fail('Tên mục tiêu tối đa 100 ký tự.');
-    const target = Number(data.target);
-    if (!Number.isFinite(target) || target <= 0) fail('Số tiền cần đạt phải lớn hơn 0.');
-    if (!Number.isInteger(target) || target > MAX_AMOUNT) fail('Số tiền cần đạt không hợp lệ.');
-    const saved = data.saved === '' || data.saved == null ? 0 : Number(data.saved);
-    if (!Number.isFinite(saved) || saved < 0) fail('Số tiền đã tiết kiệm không được âm.');
-    if (!Number.isInteger(saved) || saved > MAX_AMOUNT) fail('Số tiền đã tiết kiệm không hợp lệ.');
-    let deadline = data.deadline || null;
-    if (deadline && !isValidDate(deadline)) fail('Hạn hoàn thành không hợp lệ.');
-    return { name: name, target: target, saved: saved, deadline: deadline };
-  }
-
-  function enrichGoal(g) {
-    const percent = g.target > 0 ? Math.min(100, Math.floor(g.saved / g.target * 100)) : 0;
-    const t = today();
-    return Object.assign({}, g, {
-      percent: percent,
-      remaining: Math.max(0, g.target - g.saved),
-      done: g.saved >= g.target,
-      daysLeft: g.deadline ? diffDays(t, g.deadline) : null
-    });
-  }
-
-  const goals = {
-    async list() {
-      const userId = uid();
-      return read(KEYS.goals)
-        .filter(function (g) { return g.userId === userId; })
-        .map(enrichGoal)
-        .sort(function (a, b) { return (a.done - b.done) || ((a.createdAt || 0) - (b.createdAt || 0)); });
-    },
-    async add(data) {
-      const userId = uid();
-      const all = read(KEYS.goals);
-      const item = Object.assign({ id: newId(), userId: userId, createdAt: Date.now() }, validateGoal(data));
-      all.push(item);
-      write(KEYS.goals, all);
-      return item;
-    },
-    async update(id, data) {
-      const userId = uid();
-      const all = read(KEYS.goals);
-      const item = all.find(function (g) { return g.id === id && g.userId === userId; });
-      if (!item) fail('Không tìm thấy mục tiêu.');
-      Object.assign(item, validateGoal(data));
-      write(KEYS.goals, all);
-      return item;
-    },
-    async remove(id) {
-      const userId = uid();
-      const all = read(KEYS.goals);
-      if (!all.some(function (g) { return g.id === id && g.userId === userId; })) fail('Không tìm thấy mục tiêu.');
-      write(KEYS.goals, all.filter(function (g) { return g.id !== id; }));
-      return true;
-    },
-    async deposit(id, amount) {
-      const userId = uid();
-      amount = Number(amount);
-      if (!Number.isFinite(amount) || amount <= 0) fail('Số tiền nạp phải lớn hơn 0.');
-      if (!Number.isInteger(amount) || amount > MAX_AMOUNT) fail('Số tiền nạp không hợp lệ.');
-      const all = read(KEYS.goals);
-      const item = all.find(function (g) { return g.id === id && g.userId === userId; });
-      if (!item) fail('Không tìm thấy mục tiêu.');
-      if (item.saved + amount > MAX_AMOUNT) fail('Tổng số tiền tiết kiệm quá lớn.');
-      item.saved += amount;
-      write(KEYS.goals, all);
-      return enrichGoal(item);
-    }
-  };
-
-  /* ============================================================
      THỐNG KÊ
      ============================================================ */
   const stats = {
@@ -620,7 +542,7 @@
      DỮ LIỆU MẪU (để thử biểu đồ/báo cáo nhanh)
      ============================================================ */
   const demo = {
-    /** Thêm ~3 tháng giao dịch mẫu + vài ngân sách + mục tiêu. Trả về số giao dịch đã thêm. */
+    /** Thêm ~3 tháng giao dịch mẫu + vài ngân sách. Trả về số giao dịch đã thêm. */
     async seed() {
       const userId = uid();
       const cats = userCategories(userId);
@@ -684,21 +606,13 @@
       });
       write(KEYS.budgets, bAll);
 
-      // Mục tiêu tiết kiệm mẫu (chỉ thêm nếu chưa có mục tiêu nào)
-      const gAll = read(KEYS.goals);
-      if (!gAll.some(function (g) { return g.userId === userId; })) {
-        gAll.push({ id: newId(), userId: userId, name: 'Mua laptop', target: 15000000, saved: 4500000, deadline: addDays(todayStr, 150), createdAt: Date.now() });
-        gAll.push({ id: newId(), userId: userId, name: 'Du lịch hè cùng bạn', target: 3000000, saved: 800000, deadline: addDays(todayStr, 90), createdAt: Date.now() + 1 });
-        write(KEYS.goals, gAll);
-      }
       return rows.length;
     },
-    /** Xóa toàn bộ giao dịch, ngân sách, mục tiêu của người dùng (giữ danh mục & tài khoản). */
+    /** Xóa toàn bộ giao dịch và ngân sách của người dùng (giữ danh mục & tài khoản). */
     async clearAll() {
       const userId = uid();
       write(KEYS.transactions, read(KEYS.transactions).filter(function (t) { return t.userId !== userId; }));
       write(KEYS.budgets, read(KEYS.budgets).filter(function (b) { return b.userId !== userId; }));
-      write(KEYS.goals, read(KEYS.goals).filter(function (g) { return g.userId !== userId; }));
       return true;
     }
   };
@@ -709,7 +623,6 @@
     categories: categories,
     transactions: transactions,
     budgets: budgets,
-    goals: goals,
     stats: stats,
     profile: profile,
     demo: demo,
