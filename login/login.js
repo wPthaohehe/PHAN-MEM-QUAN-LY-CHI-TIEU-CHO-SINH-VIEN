@@ -7,21 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const passwordError = document.getElementById('passwordError');
   const loginError = document.getElementById('loginError');
 
-  function getUsers() {
-    try {
-      return JSON.parse(localStorage.getItem('poketto_users')) || [];
-    } catch (error) {
-      return [];
-    }
-  }
-
-  function saveUsers(users) {
-    localStorage.setItem('poketto_users', JSON.stringify(users));
-  }
-
-  function newId() {
-    return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  }
+  // Nếu phiên vẫn còn hợp lệ, không yêu cầu người dùng đăng nhập lại.
+  if (window.Auth && Auth.redirectIfLoggedIn()) return;
 
   function validateIdentifier() {
     if (identifierInput.value.trim() === '') {
@@ -57,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const identifier = identifierInput.value.trim().toLowerCase();
-    const users = getUsers();
+    const users = Auth.getUsers();
 
     const matchedUser = users.find((user) => {
       const emailMatches = user.email && user.email.toLowerCase() === identifier;
@@ -71,15 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Tài khoản tạo từ bản cũ có thể chưa có id -> cấp id và lưu lại
-    if (!matchedUser.id) {
-      matchedUser.id = newId();
-      saveUsers(users);
+    // Dùng mô-đun xác thực chung để tôn trọng lựa chọn "Ghi nhớ đăng nhập".
+    const remember = form.elements.remember.checked;
+    const session = Auth.login(matchedUser, remember);
+    if (!session) {
+      loginError.textContent = 'Không thể tạo phiên đăng nhập. Vui lòng thử lại.';
+      return;
     }
-
-    // Phiên đăng nhập chỉ chứa id/fullName/email, KHÔNG chứa mật khẩu
-    const session = { id: matchedUser.id, fullName: matchedUser.fullName, email: matchedUser.email };
-    localStorage.setItem('poketto_current_user', JSON.stringify(session));
     console.log('Đăng nhập thành công:', session);
 
     loginError.style.color = '#2f7d5b';

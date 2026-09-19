@@ -13,7 +13,7 @@
 
   function catCard(c, usage) {
     const n = usage[c.id] || 0;
-    return '<div class="cat-card" data-id="' + esc(c.id) + '">' +
+    return '<div class="cat-card" data-id="' + esc(c.id) + '" role="button" tabindex="0" title="Xem giao dịch của danh mục ' + esc(c.name) + '">' +
       '<span class="cat-dot" style="background:' + esc(c.color) + '33">' + esc(c.icon) + '</span>' +
       '<div class="cat-meta"><strong>' + esc(c.name) + '</strong><small>' + n + ' giao dịch</small></div>' +
       '<button class="icon-btn" data-act="edit" title="Sửa" aria-label="Sửa danh mục">✏️</button>' +
@@ -40,10 +40,17 @@
       root.querySelectorAll('.cat-grid').forEach(function (grid) {
         grid.addEventListener('click', async function (e) {
           const btn = e.target.closest('button[data-act]');
-          if (!btn) return;
-          const id = btn.closest('.cat-card').dataset.id;
+          const card = e.target.closest('.cat-card');
+          if (!card) return;
+          const id = card.dataset.id;
           const cat = cats.find(function (c) { return c.id === id; });
           if (!cat) return;
+          // Bấm vào phần nội dung của thẻ để xem toàn bộ giao dịch thuộc danh mục.
+          // Các nút sửa/xóa vẫn giữ hành vi riêng.
+          if (!btn) {
+            location.href = '../transactions/transactions.html?categoryId=' + encodeURIComponent(id);
+            return;
+          }
           if (btn.dataset.act === 'edit') { openForm(cat); return; }
           const n = usage[id] || 0;
           if (n > 0) {
@@ -57,6 +64,13 @@
             UI.toast('Đã xóa danh mục.', 'success');
             render();
           } catch (err) { UI.toast(UI.errMsg(err), 'error'); }
+        });
+        grid.addEventListener('keydown', function (e) {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          const card = e.target.closest('.cat-card');
+          if (!card || e.target.closest('button[data-act]')) return;
+          e.preventDefault();
+          location.href = '../transactions/transactions.html?categoryId=' + encodeURIComponent(card.dataset.id);
         });
       });
     } catch (e) {

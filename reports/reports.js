@@ -32,7 +32,13 @@
 
   async function renderList(cats) {
     const r = U.monthRange(state.month);
-    const byCat = await Store.stats.byCategory(r.from, r.to, state.type);
+    // Lấy song song: cơ cấu theo danh mục (biểu đồ tròn) + xu hướng 6 tháng (biểu đồ cột)
+    const data = await Promise.all([
+      Store.stats.byCategory(r.from, r.to, state.type),
+      Store.stats.lastMonths(state.month, 6)
+    ]);
+    const byCat = data[0];
+    const trend = data[1];
     const total = byCat.reduce(function (s, c) { return s + c.total; }, 0);
 
     root.innerHTML =
@@ -42,8 +48,12 @@
       '<div class="segmented" id="typeSeg" style="max-width:280px;margin-bottom:16px">' +
         '<button type="button" data-type="expense">Chi tiêu</button><button type="button" data-type="income">Thu nhập</button></div>' +
 
-      '<div class="card" style="margin-bottom:16px"><h3>' + esc(UI.formatMonth(state.month)) + '</h3>' +
-        '<div id="donutBox" class="chart-box"></div></div>' +
+      '<div class="grid two">' +
+        '<div class="card"><h3>' + (state.type === 'expense' ? 'Cơ cấu chi tiêu' : 'Cơ cấu thu nhập') + ' · ' + esc(UI.formatMonth(state.month)) + '</h3>' +
+          '<div id="donutBox" class="chart-box"></div></div>' +
+        '<div class="card"><h3>Thu &amp; chi 6 tháng gần nhất</h3>' +
+          '<div id="barsBox" class="chart-box"></div></div>' +
+      '</div>' +
 
       '<div class="card"><h3>Chi tiết theo danh mục</h3><div id="catList"></div></div>';
 
@@ -58,6 +68,10 @@
       byCat.map(function (c) { return { label: c.name, icon: c.icon, value: c.total, color: c.color }; }),
       { centerTop: state.type === 'expense' ? 'Tổng chi' : 'Tổng thu', centerBottom: UI.formatShort(total),
         emptyText: 'Chưa có dữ liệu trong tháng này' });
+
+    Charts.bars(root.querySelector('#barsBox'),
+      trend.map(function (t) { return { label: 'T' + Number(t.key.slice(5)), values: { income: t.income, expense: t.expense } }; }),
+      { emptyText: 'Chưa có dữ liệu thu/chi' });
 
     const listBox = root.querySelector('#catList');
     listBox.innerHTML = byCat.length

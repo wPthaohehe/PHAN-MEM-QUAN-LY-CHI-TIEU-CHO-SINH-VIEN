@@ -1,0 +1,9 @@
+{
+  "name": "poketto-quan-ly-chi-tieu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Phần mềm quản lý chi tiêu cho sinh viên Poketto",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
