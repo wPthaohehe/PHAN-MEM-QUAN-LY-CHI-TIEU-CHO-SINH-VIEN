@@ -1,14 +1,13 @@
 (function () {
   'use strict';
 
-  const user = UI.initShell({ active: 'budgets', title: 'Ngân sách & tiết kiệm', onDataChange: render });
+  const user = UI.initShell({ active: 'budgets', title: 'Ngân sách', onDataChange: render });
   if (!user) return;
 
   const root = document.getElementById('content');
   const U = Store.util;
   const esc = UI.esc;
 
-  let tab = location.hash === '#goals' ? 'goals' : 'budgets';
   let month = U.monthOf(U.today());
 
   function moneyField(id, label, placeholder, value) {
@@ -124,140 +123,9 @@
     });
   }
 
-  /* ============================================================
-     MỤC TIÊU TIẾT KIỆM
-     ============================================================ */
-  async function renderGoals(box) {
-    const list = await Store.goals.list();
-    box.innerHTML =
-      '<div class="page-head"><div><h1>Mục tiêu tiết kiệm</h1><p class="muted">Đặt mục tiêu (mua laptop, du lịch...) và theo dõi tiến độ tiết kiệm.</p></div>' +
-      '<button class="btn primary" id="addGoalBtn">＋ Thêm mục tiêu</button></div>' +
-      (list.length
-        ? '<div class="goal-grid" id="goalGrid">' + list.map(function (g) {
-            let deadlineText = '';
-            if (g.deadline) {
-              deadlineText = g.done ? '' : (g.daysLeft < 0 ? 'Đã quá hạn ' + (-g.daysLeft) + ' ngày' : g.daysLeft === 0 ? 'Hạn là hôm nay' : 'Còn ' + g.daysLeft + ' ngày');
-            }
-            return '<div class="card goal-card" data-id="' + esc(g.id) + '">' +
-              '<div class="row-top" style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><h4>🎯 ' + esc(g.name) + '</h4>' +
-              '<small class="muted">' + (g.deadline ? 'Hạn: ' + UI.formatDate(g.deadline) + (deadlineText ? ' · ' + deadlineText : '') : 'Không đặt hạn') + '</small></div>' +
-              '<span class="badge ' + (g.done ? 'done' : '') + '">' + (g.done ? 'Hoàn thành 🎉' : g.percent + '%') + '</span></div>' +
-              '<div class="goal-nums"><span>Đã có <strong>' + UI.formatMoney(g.saved) + '</strong></span><span class="muted">Mục tiêu ' + UI.formatMoney(g.target) + '</span></div>' +
-              '<div class="progress"><span style="width:' + g.percent + '%"></span></div>' +
-              '<div class="row-sub"><span>' + (g.done ? 'Bạn đã đạt mục tiêu!' : 'Còn thiếu ' + UI.formatMoney(g.remaining)) + '</span></div>' +
-              '<div class="goal-actions"><button class="btn primary sm" data-act="deposit">＋ Nạp thêm</button>' +
-              '<button class="btn ghost sm" data-act="edit">Sửa</button><button class="btn ghost sm" data-act="delete">Xóa</button></div></div>';
-          }).join('') + '</div>'
-        : '<div class="card"><div class="empty"><div class="empty-icon">🐷</div><h3>Chưa có mục tiêu nào</h3><p>Hãy tạo mục tiêu đầu tiên, ví dụ "Mua laptop" hay "Du lịch hè".</p></div></div>');
-
-    box.querySelector('#addGoalBtn').addEventListener('click', function () { openGoalForm(null); });
-    const grid = box.querySelector('#goalGrid');
-    if (grid) grid.addEventListener('click', async function (e) {
-      const btn = e.target.closest('button[data-act]');
-      if (!btn) return;
-      const id = btn.closest('.goal-card').dataset.id;
-      const g = list.find(function (x) { return x.id === id; });
-      if (!g) return;
-      if (btn.dataset.act === 'edit') openGoalForm(g);
-      else if (btn.dataset.act === 'deposit') openDeposit(g);
-      else {
-        const ok = await UI.confirm('Xóa mục tiêu "' + g.name + '"? Số tiền đã tiết kiệm trong mục tiêu này sẽ không còn được theo dõi.', { title: 'Xóa mục tiêu', okText: 'Xóa', danger: true });
-        if (!ok) return;
-        try { await Store.goals.remove(id); UI.toast('Đã xóa mục tiêu.', 'success'); render(); }
-        catch (err) { UI.toast(UI.errMsg(err), 'error'); }
-      }
-    });
-  }
-
-  function openGoalForm(goal) {
-    const isEdit = !!goal;
-    const fmt = new Intl.NumberFormat('vi-VN');
-    const form = UI.el('form', 'form');
-    form.noValidate = true;
-    form.innerHTML =
-      '<label for="gName">Tên mục tiêu</label><input type="text" id="gName" maxlength="100" placeholder="VD: Mua laptop">' +
-      '<span class="field-error" id="gNameErr"></span>' +
-      moneyField('gTarget', 'Số tiền cần đạt (₫)', 'VD: 15.000.000', isEdit ? fmt.format(goal.target) : null) +
-      moneyField('gSaved', 'Số tiền đã tiết kiệm (₫)', 'VD: 0', isEdit ? fmt.format(goal.saved) : null) +
-      '<label for="gDeadline">Hạn hoàn thành <small class="muted">(không bắt buộc)</small></label><input type="date" id="gDeadline">' +
-      '<span class="field-error" id="gDeadlineErr"></span>' +
-      '<span class="field-error form-error" id="gErr"></span>' +
-      '<div class="modal-actions"><button type="button" class="btn ghost" id="gCancel">Hủy</button><button type="submit" class="btn primary">' + (isEdit ? 'Lưu thay đổi' : 'Tạo mục tiêu') + '</button></div>';
-    const $ = function (s) { return form.querySelector(s); };
-    $('#gName').value = goal ? goal.name : '';
-    $('#gDeadline').value = goal && goal.deadline ? goal.deadline : '';
-    UI.bindMoneyInput($('#gTarget'));
-    UI.bindMoneyInput($('#gSaved'));
-    const modal = UI.openModal({ title: isEdit ? 'Sửa mục tiêu' : 'Thêm mục tiêu tiết kiệm', body: form, width: '460px' });
-    $('#gCancel').addEventListener('click', function () { modal.close(); });
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      $('#gErr').textContent = '';
-      const name = $('#gName').value.trim();
-      const target = UI.parseMoney($('#gTarget').value);
-      const saved = UI.parseMoney($('#gSaved').value);
-      const deadline = $('#gDeadline').value;
-      let bad = false;
-      $('#gNameErr').textContent = name ? '' : 'Vui lòng nhập tên mục tiêu.'; if (!name) bad = true;
-      $('#gTargetErr').textContent = target > 0 ? '' : 'Số tiền cần đạt phải lớn hơn 0.'; if (target <= 0) bad = true;
-      $('#gDeadlineErr').textContent = ''; $('#gSavedErr').textContent = '';
-      if (bad) return;
-      try {
-        const data = { name: name, target: target, saved: saved, deadline: deadline || null };
-        if (isEdit) await Store.goals.update(goal.id, data); else await Store.goals.add(data);
-        UI.toast(isEdit ? 'Đã cập nhật mục tiêu.' : 'Đã tạo mục tiêu.', 'success');
-        modal.close();
-        render();
-      } catch (err) { $('#gErr').textContent = UI.errMsg(err); }
-    });
-  }
-
-  function openDeposit(goal) {
-    const form = UI.el('form', 'form');
-    form.noValidate = true;
-    form.innerHTML =
-      '<p class="muted" style="margin-bottom:8px">Mục tiêu <strong>' + esc(goal.name) + '</strong> — còn thiếu ' + UI.formatMoney(goal.remaining) + '.</p>' +
-      moneyField('dAmount', 'Số tiền nạp thêm (₫)', 'VD: 200.000', null) +
-      '<span class="field-error form-error" id="dErr"></span>' +
-      '<div class="modal-actions"><button type="button" class="btn ghost" id="dCancel">Hủy</button><button type="submit" class="btn primary">Nạp tiền</button></div>';
-    const $ = function (s) { return form.querySelector(s); };
-    UI.bindMoneyInput($('#dAmount'));
-    const modal = UI.openModal({ title: 'Nạp thêm vào mục tiêu', body: form, width: '420px' });
-    $('#dCancel').addEventListener('click', function () { modal.close(); });
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const amount = UI.parseMoney($('#dAmount').value);
-      $('#dErr').textContent = '';
-      if (amount <= 0) { $('#dAmountErr').textContent = 'Số tiền phải lớn hơn 0.'; return; }
-      $('#dAmountErr').textContent = '';
-      try {
-        const updated = await Store.goals.deposit(goal.id, amount);
-        UI.toast(updated.done && !goal.done ? '🎉 Chúc mừng! Bạn đã đạt mục tiêu "' + goal.name + '".' : 'Đã nạp ' + UI.formatMoney(amount) + ' vào mục tiêu.', 'success');
-        modal.close();
-        render();
-      } catch (err) { $('#dErr').textContent = UI.errMsg(err); }
-    });
-  }
-
-  /* ============================================================
-     Khung trang + tab
-     ============================================================ */
   async function render() {
     try {
-      root.innerHTML =
-        '<div class="tabs" role="tablist">' +
-          '<button class="tab' + (tab === 'budgets' ? ' active' : '') + '" data-tab="budgets" role="tab">Ngân sách</button>' +
-          '<button class="tab' + (tab === 'goals' ? ' active' : '') + '" data-tab="goals" role="tab">Mục tiêu tiết kiệm</button>' +
-        '</div><div id="tabBody"></div>';
-      root.querySelectorAll('.tab').forEach(function (b) {
-        b.addEventListener('click', function () {
-          tab = b.dataset.tab;
-          history.replaceState(null, '', tab === 'goals' ? '#goals' : location.pathname);
-          render();
-        });
-      });
-      const body = root.querySelector('#tabBody');
-      if (tab === 'goals') await renderGoals(body); else await renderBudgets(body);
+      await renderBudgets(root);
     } catch (e) {
       root.innerHTML = '<div class="card"><div class="empty"><p>' + esc(UI.errMsg(e)) + '</p></div></div>';
     }

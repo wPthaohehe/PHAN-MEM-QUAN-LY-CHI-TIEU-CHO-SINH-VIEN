@@ -140,11 +140,11 @@
         '</div>' +
 
         '<div class="card" style="margin-bottom:16px"><h3>Dữ liệu</h3>' +
-          '<p class="muted" style="margin-bottom:12px">Nạp dữ liệu mẫu (khoảng 3 tháng thu chi, ngân sách, mục tiêu) để xem thử biểu đồ và báo cáo. Bạn có thể xóa sạch bất cứ lúc nào.</p>' +
+          '<p class="muted" style="margin-bottom:12px">Nạp dữ liệu mẫu (khoảng 3 tháng thu chi và ngân sách) để xem thử biểu đồ và báo cáo. Bạn có thể xóa sạch bất cứ lúc nào.</p>' +
           '<div class="row-actions"><button class="btn ghost" id="seedBtn">Nạp dữ liệu mẫu</button></div></div>' +
 
         '<div class="card danger-zone"><h3>Vùng nguy hiểm</h3>' +
-          '<p class="muted" style="margin-bottom:12px">Xóa toàn bộ giao dịch, ngân sách và mục tiêu tiết kiệm của bạn. Danh mục và tài khoản được giữ nguyên. Không thể hoàn tác.</p>' +
+          '<p class="muted" style="margin-bottom:12px">Xóa toàn bộ giao dịch và ngân sách của bạn. Danh mục và tài khoản được giữ nguyên. Không thể hoàn tác.</p>' +
           '<div class="row-actions"><button class="btn danger" id="clearBtn">Xóa toàn bộ dữ liệu</button></div></div>';
 
       root.querySelector('#notifToggle').checked = getPref('poketto_notif', true);
@@ -176,7 +176,7 @@
     });
 
     $('#clearBtn').addEventListener('click', async function () {
-      const ok = await UI.confirm('Xóa TOÀN BỘ giao dịch, ngân sách và mục tiêu tiết kiệm của bạn? Hành động này không thể hoàn tác.', { title: 'Xóa toàn bộ dữ liệu', okText: 'Xóa hết', danger: true });
+      const ok = await UI.confirm('Xóa TOÀN BỘ giao dịch và ngân sách của bạn? Hành động này không thể hoàn tác.', { title: 'Xóa toàn bộ dữ liệu', okText: 'Xóa hết', danger: true });
       if (!ok) return;
       try {
         await Store.demo.clearAll();
