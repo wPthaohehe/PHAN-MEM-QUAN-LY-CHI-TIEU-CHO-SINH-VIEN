@@ -23,3 +23,13 @@
 * Lưu trữ dữ liệu: Sử dụng LocalStorage của trình duyệt để lưu lại dữ liệu người dùng và các khoản chi tiêu (đóng trình duyệt mở lại vẫn còn nguyên).
 * Thiết kế CSDL: Nhóm đã có sẵn file thiết kế bảng dữ liệu THIET_KE_VATLY.sql để chuẩn bị cho việc kết nối SQL Server sau này.
 * Quản lý mã nguồn: Git, GitHub.
+
+## 5. Chạy dự án
+
+1. Mở terminal tại đúng thư mục dự án (thư mục chứa `server.js`).
+2. Chạy lệnh `npm start`.
+3. Mở [http://localhost:3000](http://localhost:3000). Máy chủ sẽ tự chuyển tới trang đăng nhập.
+
+Hoặc bạn có thể mở file `login/login.html` bằng **Live Server** trong Visual Studio Code.
+
+> Nếu chưa có **Live Server**, hãy cài extension này trong Visual Studio Code rồi thực hiện lại các bước trên.

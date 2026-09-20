@@ -13,6 +13,10 @@
   let cats = [];
   let current = []; // kết quả sau khi lọc
 
+  function selectedCategory() {
+    return cats.find(function (c) { return c.id === state.categoryId; });
+  }
+
   function applyPreset(p) {
     state.preset = p;
     const today = U.today();
@@ -34,7 +38,7 @@
       .map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.icon) + ' ' + esc(c.name) + '</option>'; }).join('');
 
     root.innerHTML =
-      '<div class="page-head"><div><h1>Giao dịch</h1><p class="muted">Xem, tìm kiếm, sửa và xóa các khoản thu chi.</p></div>' +
+      '<div class="page-head"><div><h1>Giao dịch</h1><p class="muted" id="pageHint">Xem, tìm kiếm, sửa và xóa các khoản thu chi.</p></div>' +
       '<div class="row-actions"><button class="btn ghost" id="exportBtn">⬇ Xuất CSV</button>' +
       '<button class="btn primary" id="addBtn">＋ Thêm giao dịch</button></div></div>' +
 
@@ -59,6 +63,8 @@
 
     root.querySelector('#fFrom').value = state.from;
     root.querySelector('#fTo').value = state.to;
+    root.querySelector('#fType').value = state.type;
+    root.querySelector('#fCat').value = state.categoryId;
 
     root.querySelector('#addBtn').addEventListener('click', async function () { if (await UI.openTransactionForm()) refresh(); });
     root.querySelector('#exportBtn').addEventListener('click', exportCsv);
@@ -110,6 +116,11 @@
     root.querySelectorAll('#presets .chip').forEach(function (b) {
       b.classList.toggle('active', b.dataset.preset === state.preset);
     });
+
+    const category = selectedCategory();
+    root.querySelector('#pageHint').textContent = category
+      ? 'Các giao dịch của danh mục ' + category.icon + ' ' + category.name + '.'
+      : 'Xem, tìm kiếm, sửa và xóa các khoản thu chi.';
 
     let income = 0, expense = 0;
     current.forEach(function (t) { if (t.type === 'income') income += t.amount; else expense += t.amount; });
@@ -199,7 +210,11 @@
       cats = await Store.categories.list();
       const params = new URLSearchParams(location.search);
       const q = params.get('q');
-      if (q) { applyPreset('all'); state.q = q; } else { applyPreset('month'); }
+      const categoryId = params.get('categoryId');
+      if (categoryId && cats.some(function (c) { return c.id === categoryId; })) {
+        applyPreset('all');
+        state.categoryId = categoryId;
+      } else if (q) { applyPreset('all'); state.q = q; } else { applyPreset('month'); }
       buildLayout();
       if (q) root.querySelector('#fQ').value = q;
       refresh();

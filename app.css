@@ -345,7 +345,8 @@ svg.bars { display: block; max-width: 100%; }
 
 /* Danh mục */
 .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
-.cat-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.cat-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.cat-card:hover, .cat-card:focus-visible { border-color: var(--green-500); box-shadow: 0 3px 12px rgba(63, 157, 111, .14); transform: translateY(-1px); outline: none; }
 .cat-card .cat-dot { width: 40px; height: 40px; font-size: 20px; border-radius: 12px; }
 .cat-card .cat-meta { flex: 1; min-width: 0; }
 .cat-card .cat-meta strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -470,4 +471,9 @@ button.settings-row { cursor: pointer; }
   .donut { width: 160px; height: 160px; }
   .modal-overlay { align-items: flex-end; padding: 0; }
   .modal { border-radius: 16px 16px 0 0; max-width: 100% !important; }
+}
+
+/* Sửa lỗi kính lúp đè chữ Tìm kiếm */
+.search-box input {
+  padding-left: 36px !important;
 }
