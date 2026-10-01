@@ -11,6 +11,7 @@
 ## 2. Thành viên nhóm
 * Ngô Hoàng Phương Thảo - 28A4042635
 * Lê Minh Ánh - 28A4042584
+* Nguyễn Hương Giang - 28A4042599
 
 ## 3. Các chức năng chính
 * Đăng ký & Đăng nhập: Người dùng tạo tài khoản mới bằng họ tên, email, số điện thoại và mật khẩu; hệ thống kiểm tra tính hợp lệ của dữ liệu đầu vào và lưu trạng thái đăng nhập để bảo vệ dữ liệu riêng của từng người.
