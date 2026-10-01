@@ -17,6 +17,7 @@
 * Quản lý thu - chi: Cho phép thêm, sửa, xóa các khoản giao dịch hàng ngày kèm số tiền, danh mục, ngày thực hiện và ghi chú; hệ thống có kiểm tra số tiền hợp lệ, cảnh báo khi nhập trùng, hỗ trợ lọc theo mốc thời gian/danh mục, tìm kiếm và xuất dữ liệu ra file CSV.
 * Quản lý danh mục & Ngân sách: Cung cấp sẵn các nhóm chi tiêu cơ bản và cho phép tạo mới danh mục (không cho xóa danh mục đã phát sinh giao dịch); hỗ trợ đặt hạn mức chi tiêu tối đa theo tháng và tự động đổi màu cảnh báo khi người dùng tiêu gần hết hoặc vượt quá ngân sách.
 * Thống kê & Biểu đồ: Tổng hợp các khoản thu chi để tính toán số dư hiện tại, trực quan hóa dữ liệu qua biểu đồ tròn (thể hiện cơ cấu tỷ trọng từng danh mục) và biểu đồ cột (so sánh tương quan tổng thu với tổng chi theo từng tháng).
+* Trợ lý chi tiêu Poketto: khi cấu hình OpenAI API key, trợ lý có thể trả lời linh hoạt về lập kế hoạch/ngân sách/tiết kiệm và nhận bản tóm tắt thu chi tháng hiện tại. Nếu chưa cấu hình API hoặc dịch vụ gặp lỗi, ứng dụng dùng câu trả lời dự phòng theo quy tắc cục bộ. Mở từ mục **Trợ lý AI** ở thanh bên.
 
 ## 4. Công nghệ sử dụng
 * Giao diện web: HTML, CSS, JavaScript.
@@ -29,6 +30,22 @@
 1. Mở terminal tại đúng thư mục dự án (thư mục chứa `server.js`).
 2. Chạy lệnh `npm start`.
 3. Mở [http://localhost:3000](http://localhost:3000). Máy chủ sẽ tự chuyển tới trang đăng nhập.
+
+Máy chủ cần Node.js 18 trở lên vì API AI dùng `fetch` có sẵn trong Node.js.
+
+### Bật chatbot qua OpenAI API (tùy chọn)
+
+Máy chủ gửi yêu cầu tới OpenAI Responses API; khóa chỉ được đọc từ biến môi trường và không đưa vào mã trình duyệt. Tạo API key trong OpenAI Platform, mở PowerShell tại thư mục dự án, rồi đặt biến trong cùng cửa sổ trước khi chạy:
+
+```powershell
+$env:OPENAI_API_KEY = "YOUR_API_KEY"
+$env:OPENAI_MODEL = "gpt-6-luna" # tùy chọn; mặc định là gpt-6-luna
+npm start
+```
+
+Sau đó mở lại Trợ lý chi tiêu. Nếu chưa đặt `OPENAI_API_KEY`, giao diện báo **Chế độ mẫu** và dùng chatbot theo quy tắc cục bộ. Không commit API key vào Git. Khi API bật, câu hỏi, tối đa 8 tin nhắn gần nhất và dữ liệu tổng hợp thu chi/ngân sách (không gồm tên, email, số điện thoại, ghi chú giao dịch hay mã tài khoản) được gửi tới OpenAI để tạo trả lời. Chỉ truyền dữ liệu demo khi trình bày; tránh nhập thông tin nhạy cảm. API key và quyền sử dụng dịch vụ do chủ tài khoản OpenAI quản lý.
+
+API được tính phí theo model và lượng token sử dụng; hãy xem [giá API hiện hành](https://developers.openai.com/api/docs/pricing) và thiết lập giới hạn chi tiêu phù hợp trong tài khoản trước khi dùng thường xuyên.
 
 Hoặc bạn có thể mở file `login/login.html` bằng **Live Server** trong Visual Studio Code.
 

@@ -19,6 +19,7 @@
     { key: 'reports', label: 'Báo cáo', icon: '📊', url: '../reports/reports.html' },
     { key: 'transactions', label: 'Giao dịch', icon: '🧾', url: '../transactions/transactions.html' },
     { key: 'budgets', label: 'Ngân sách', icon: '🎯', url: '../budgets/budgets.html' },
+    { key: 'chatbot', label: 'Trợ lý AI', icon: '✨', url: '../chatbot/chatbot.html' },
     { key: 'categories', label: 'Danh mục', icon: '🏷️', url: '../categories/categories.html' },
     { key: 'profile', label: 'Cài đặt', icon: '⚙️', url: '../profile/profile.html' }
   ];
